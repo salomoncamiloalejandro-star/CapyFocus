@@ -12,12 +12,14 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -32,7 +34,7 @@ import com.muzu.capyfocus.ui.screens.agenda.components.AgendaItemDetailDialog
 import com.muzu.capyfocus.ui.screens.agenda.components.DayCalendarView
 import com.muzu.capyfocus.ui.screens.agenda.components.MonthCalendarView
 import com.muzu.capyfocus.ui.screens.agenda.components.WeekCalendarView
-import java.time.format.TextStyle
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
@@ -41,82 +43,70 @@ fun AgendaScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    AgendaContent(
-        uiState = uiState,
-        onEvent = viewModel::onEvent,
-    )
-}
-
-@Composable
-fun AgendaContent(
-    uiState: AgendaUiState,
-    onEvent: (AgendaEvent) -> Unit,
-) {
     Scaffold(
+        topBar = {
+            AgendaHeader(uiState = uiState, onEvent = viewModel::onEvent)
+        },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { onEvent(AgendaEvent.ShowAddDialog()) },
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Crear actividad")
+            FloatingActionButton(onClick = { viewModel.onEvent(AgendaEvent.ShowAddDialog()) }) {
+                Icon(Icons.Default.Add, contentDescription = "Agregar elemento")
             }
         },
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
         ) {
-            AgendaHeader(
-                uiState = uiState,
-                onEvent = onEvent,
-            )
-
-            Box(modifier = Modifier.fillMaxSize()) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                } else {
-                    when (uiState.viewMode) {
-                        AgendaViewMode.DAY -> {
-                            DayCalendarView(
-                                items = uiState.items,
-                                onEvent = onEvent,
-                            )
-                        }
-                        AgendaViewMode.WEEK -> {
-                            WeekCalendarView(
-                                selectedDate = uiState.selectedDate,
-                                items = uiState.items,
-                                onEvent = onEvent,
-                            )
-                        }
-                        AgendaViewMode.MONTH -> {
-                            MonthCalendarView(
-                                selectedDate = uiState.selectedDate,
-                                items = uiState.items,
-                                onEvent = onEvent,
-                            )
-                        }
+            if (uiState.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                )
+            } else {
+                when (uiState.viewMode) {
+                    AgendaViewMode.DAY -> {
+                        DayCalendarView(
+                            items = uiState.items,
+                            onEvent = viewModel::onEvent,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                    AgendaViewMode.WEEK -> {
+                        WeekCalendarView(
+                            selectedDate = uiState.selectedDate,
+                            items = uiState.items,
+                            onEvent = viewModel::onEvent,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                    AgendaViewMode.MONTH -> {
+                        MonthCalendarView(
+                            selectedDate = uiState.selectedDate,
+                            items = uiState.items,
+                            onEvent = viewModel::onEvent,
+                            modifier = Modifier.fillMaxSize(),
+                        )
                     }
                 }
             }
+
+            if (uiState.isAddEditDialogVisible) {
+                AddEditAgendaItemDialog(
+                    selectedDate = uiState.selectedDate,
+                    editingItem = uiState.editingItem,
+                    initialStartMinute = uiState.dialogInitialStartMinute,
+                    errorMessage = uiState.errorMessage,
+                    onEvent = viewModel::onEvent,
+                )
+            }
+
+            if (uiState.isDetailVisible && uiState.detailItem != null) {
+                AgendaItemDetailDialog(
+                    item = uiState.detailItem!!,
+                    onEvent = viewModel::onEvent,
+                )
+            }
         }
-    }
-
-    if (uiState.isAddEditDialogVisible) {
-        AddEditAgendaItemDialog(
-            selectedDate = uiState.selectedDate,
-            editingItem = uiState.editingItem,
-            initialStartMinute = uiState.dialogInitialStartMinute,
-            errorMessage = uiState.errorMessage,
-            onEvent = onEvent,
-        )
-    }
-
-    if (uiState.isDetailVisible && uiState.detailItem != null) {
-        AgendaItemDetailDialog(
-            item = uiState.detailItem,
-            onEvent = onEvent,
-        )
     }
 }
 
@@ -125,40 +115,61 @@ private fun AgendaHeader(
     uiState: AgendaUiState,
     onEvent: (AgendaEvent) -> Unit,
 ) {
-    val monthName = uiState.selectedDate.month.getDisplayName(TextStyle.FULL, Locale.getDefault())
-    val year = uiState.selectedDate.year
+    val formatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.forLanguageTag("es"))
+    val monthYearStr = uiState.selectedDate.format(formatter).replaceFirstChar { it.uppercase() }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        // Selector de vista con SegmentedButton de Material 3
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+        ) {
+            AgendaViewMode.entries.forEachIndexed { index, mode ->
+                SegmentedButton(
+                    selected = uiState.viewMode == mode,
+                    onClick = { onEvent(AgendaEvent.ChangeViewMode(mode)) },
+                    shape = SegmentedButtonDefaults.itemShape(
+                        index = index,
+                        count = AgendaViewMode.entries.size,
+                    ),
+                ) {
+                    Text(
+                        text = mode.label,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+
+        // Navegación de fechas
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { onEvent(AgendaEvent.NavigateDate(-1)) }) {
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Anterior")
-                }
-                Text(
-                    text = "${monthName.replaceFirstChar { it.uppercase() }} $year",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+            IconButton(onClick = { onEvent(AgendaEvent.NavigateDate(-1)) }) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                    contentDescription = "Anterior",
                 )
-                IconButton(onClick = { onEvent(AgendaEvent.NavigateDate(1)) }) {
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Siguiente")
-                }
             }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                AgendaViewMode.entries.forEach { mode ->
-                    FilterChip(
-                        selected = uiState.viewMode == mode,
-                        onClick = { onEvent(AgendaEvent.ChangeViewMode(mode)) },
-                        label = { Text(mode.label) },
-                    )
-                }
+            Text(
+                text = monthYearStr,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            )
+            IconButton(onClick = { onEvent(AgendaEvent.NavigateDate(1)) }) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = "Siguiente",
+                )
             }
         }
     }
