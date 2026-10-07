@@ -15,9 +15,9 @@ enum class AppDestination(
     @StringRes val labelRes: Int,
     val icon: ImageVector
 ) {
-    TODAY("today", R.string.nav_today, Icons.Default.Home),
     AGENDA("agenda", R.string.nav_agenda, Icons.Default.DateRange),
     POMODORO("pomodoro", R.string.nav_pomodoro, Icons.Default.PlayArrow),
+    TODAY("today", R.string.nav_today, Icons.Default.Home),
     STATS("stats", R.string.nav_stats, Icons.AutoMirrored.Filled.List),
     PROFILE("profile", R.string.nav_profile, Icons.Default.Person)
 }
