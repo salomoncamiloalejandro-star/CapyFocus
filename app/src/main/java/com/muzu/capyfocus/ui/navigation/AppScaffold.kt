@@ -17,6 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.muzu.capyfocus.ui.components.PlaceholderScreen
+import com.muzu.capyfocus.ui.screens.agenda.AgendaScreen
 
 @Composable
 fun AppScaffold() {
@@ -41,20 +42,23 @@ fun AppScaffold() {
                             }
                         },
                         icon = { Icon(destination.icon, contentDescription = null) },
-                        label = { Text(stringResource(destination.labelRes)) }
+                        label = { Text(stringResource(destination.labelRes)) },
                     )
                 }
             }
-        }
+        },
     ) { innerPadding ->
         NavHost(
             navController = navController,
             startDestination = AppDestination.TODAY.route,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(innerPadding),
         ) {
             AppDestination.entries.forEach { destination ->
                 composable(destination.route) {
-                    PlaceholderScreen(title = stringResource(destination.labelRes))
+                    when (destination) {
+                        AppDestination.AGENDA -> AgendaScreen()
+                        else -> PlaceholderScreen(title = stringResource(destination.labelRes))
+                    }
                 }
             }
         }
