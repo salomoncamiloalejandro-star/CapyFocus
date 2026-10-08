@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.muzu.capyfocus.data.local.room.AgendaItemDao
 import com.muzu.capyfocus.data.local.room.AppDatabase
+import com.muzu.capyfocus.data.local.room.HomeDao
 import com.muzu.capyfocus.data.local.room.PomodoroDao
 import com.muzu.capyfocus.data.local.room.SubjectDao
 import dagger.Module
@@ -44,5 +45,10 @@ object DatabaseModule {
     @Provides
     fun providePomodoroDao(database: AppDatabase): PomodoroDao {
         return database.pomodoroDao()
+    }
+
+    @Provides
+    fun provideHomeDao(database: AppDatabase): HomeDao {
+        return database.homeDao()
     }
 }

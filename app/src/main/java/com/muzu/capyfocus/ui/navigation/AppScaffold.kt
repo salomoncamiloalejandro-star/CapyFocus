@@ -18,6 +18,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.muzu.capyfocus.ui.components.PlaceholderScreen
 import com.muzu.capyfocus.ui.screens.agenda.AgendaScreen
+import com.muzu.capyfocus.ui.screens.home.HomeScreen
 import com.muzu.capyfocus.ui.screens.pomodoro.PomodoroScreen
 import com.muzu.capyfocus.ui.screens.stats.StatsScreen
 
@@ -58,6 +59,7 @@ fun AppScaffold() {
             AppDestination.entries.forEach { destination ->
                 composable(destination.route) {
                     when (destination) {
+                        AppDestination.TODAY -> HomeScreen()
                         AppDestination.AGENDA -> AgendaScreen()
                         AppDestination.POMODORO -> PomodoroScreen()
                         AppDestination.STATS -> StatsScreen()
