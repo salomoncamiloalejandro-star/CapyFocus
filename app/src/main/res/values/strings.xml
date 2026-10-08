@@ -14,4 +14,41 @@
     <string name="subjects_cancel">Cancelar</string>
     <string name="subjects_delete">Eliminar %1$s</string>
     <string name="subjects_error_blank">Escribí un nombre para la materia</string>
+
+    <!-- Pomodoro strings -->
+    <string name="pomodoro_title">Pomodoro</string>
+    <string name="pomodoro_state_work">Trabajo</string>
+    <string name="pomodoro_state_short_break">Descanso corto</string>
+    <string name="pomodoro_state_long_break">Descanso largo</string>
+    <string name="pomodoro_block_count">Bloque %1$d de %2$d</string>
+    <string name="pomodoro_start">Iniciar</string>
+    <string name="pomodoro_pause">Pausar</string>
+    <string name="pomodoro_resume">Reanudar</string>
+    <string name="pomodoro_reset">Reiniciar</string>
+    <string name="pomodoro_skip">Saltar</string>
+    <string name="pomodoro_settings">Configuración</string>
+    <string name="pomodoro_select_activity">Seleccionar Actividad</string>
+    <string name="pomodoro_category_study">Estudiar</string>
+    <string name="pomodoro_category_work">Trabajar</string>
+    <string name="pomodoro_category_exercise">Entrenar</string>
+    <string name="pomodoro_category_other">Otro</string>
+    <string name="pomodoro_subject_label">Materia</string>
+    <string name="pomodoro_add_subject">+ Agregar materia</string>
+    <string name="pomodoro_auto_start">Inicio automático</string>
+    <string name="pomodoro_sound">Sonido</string>
+    <string name="pomodoro_vibration">Vibración</string>
+    <string name="pomodoro_work_duration">Duración de trabajo (min)</string>
+    <string name="pomodoro_short_break_duration">Descanso corto (min)</string>
+    <string name="pomodoro_long_break_duration">Descanso largo (min)</string>
+    <string name="pomodoro_blocks_before_long_break">Bloques antes de descanso largo</string>
+
+    <!-- Stats strings -->
+    <string name="stats_title">Estadísticas</string>
+    <string name="stats_completed_blocks">Bloques completados</string>
+    <string name="stats_skipped_blocks">Bloques saltados</string>
+    <string name="stats_total_work_time">Tiempo de trabajo</string>
+    <string name="stats_total_break_time">Tiempo de descanso</string>
+    <string name="stats_by_category">Por Categoría</string>
+    <string name="stats_by_subject">Por Materia</string>
+    <string name="stats_empty">No hay sesiones de Pomodoro registradas todavía.</string>
 </resources>
