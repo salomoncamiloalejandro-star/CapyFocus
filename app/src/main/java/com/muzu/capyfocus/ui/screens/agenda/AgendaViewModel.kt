@@ -17,7 +17,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
-import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
@@ -150,7 +149,9 @@ class AgendaViewModel @Inject constructor(
         viewModelScope.launch {
             val editingItem = _uiState.value.editingItem
             if (editingItem != null) {
+                val realId = editingItem.id.substringBefore("_")
                 val updated = editingItem.copy(
+                    id = realId,
                     title = event.title,
                     description = event.description,
                     type = event.type,
@@ -193,9 +194,10 @@ class AgendaViewModel @Inject constructor(
     }
 
     private fun deleteItem(id: String) {
+        val realId = id.substringBefore("_")
         viewModelScope.launch {
-            notificationScheduler.cancelNotification(id)
-            deleteAgendaItemUseCase(id)
+            notificationScheduler.cancelNotification(realId)
+            deleteAgendaItemUseCase(realId)
             _uiState.update {
                 it.copy(
                     isDetailVisible = false,
@@ -208,10 +210,11 @@ class AgendaViewModel @Inject constructor(
     }
 
     private fun toggleCompletion(id: String, isCompleted: Boolean) {
+        val realId = id.substringBefore("_")
         viewModelScope.launch {
-            toggleAgendaItemCompletionUseCase(id, isCompleted)
+            toggleAgendaItemCompletionUseCase(realId, isCompleted)
             if (isCompleted) {
-                notificationScheduler.cancelNotification(id)
+                notificationScheduler.cancelNotification(realId)
             }
             _uiState.update { state ->
                 val updatedDetail = if (state.detailItem?.id == id) state.detailItem.copy(isCompleted = isCompleted) else state.detailItem
@@ -221,11 +224,13 @@ class AgendaViewModel @Inject constructor(
     }
 
     private fun dragMoveItem(item: AgendaItem, newStartMinute: Int) {
+        val realId = item.id.substringBefore("_")
         val durationMinutes = (item.endMinuteOfDay - item.startMinuteOfDay).coerceAtLeast(15)
         val clampedStart = newStartMinute.coerceIn(0, 1440 - durationMinutes)
         val clampedEnd = clampedStart + durationMinutes
 
         val updated = item.copy(
+            id = realId,
             startMinuteOfDay = clampedStart,
             endMinuteOfDay = clampedEnd,
         )

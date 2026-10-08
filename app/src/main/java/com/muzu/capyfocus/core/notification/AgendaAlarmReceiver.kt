@@ -8,8 +8,22 @@ import android.content.Intent
 import androidx.core.app.NotificationCompat
 import com.muzu.capyfocus.MainActivity
 import com.muzu.capyfocus.R
+import com.muzu.capyfocus.domain.models.RecurrenceType
+import com.muzu.capyfocus.domain.repository.AgendaRepository
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class AgendaAlarmReceiver : BroadcastReceiver() {
+
+    @Inject
+    lateinit var agendaRepository: AgendaRepository
+
+    @Inject
+    lateinit var notificationScheduler: NotificationScheduler
 
     override fun onReceive(context: Context, intent: Intent) {
         val itemId = intent.getStringExtra(NotificationScheduler.EXTRA_ITEM_ID) ?: return
@@ -38,5 +52,18 @@ class AgendaAlarmReceiver : BroadcastReceiver() {
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         notificationManager?.notify(itemId.hashCode(), notification)
+
+        // For recurring items, re-schedule notification for the next occurrence
+        val pendingResult = goAsync()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val item = agendaRepository.getItemById(itemId)
+                if (item != null && item.recurrenceType != RecurrenceType.NONE && !item.isCompleted) {
+                    notificationScheduler.scheduleNotification(item)
+                }
+            } finally {
+                pendingResult.finish()
+            }
+        }
     }
 }

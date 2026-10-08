@@ -4,7 +4,7 @@ import com.muzu.capyfocus.domain.models.AgendaItem
 import kotlinx.coroutines.flow.Flow
 
 interface AgendaRepository {
-    fun observeItemsForDateRange(startEpochDay: Long, endEpochDay: Long): Flow<List<AgendaItem>>
+    fun observeItemsUpToEndDate(endEpochDay: Long): Flow<List<AgendaItem>>
     suspend fun getItemById(id: String): AgendaItem?
     suspend fun getAllPendingWithNotifications(): List<AgendaItem>
     suspend fun upsertItem(item: AgendaItem)

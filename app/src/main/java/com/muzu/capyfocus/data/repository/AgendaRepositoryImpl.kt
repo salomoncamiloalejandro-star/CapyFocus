@@ -15,8 +15,8 @@ class AgendaRepositoryImpl @Inject constructor(
     private val agendaItemDao: AgendaItemDao,
 ) : AgendaRepository {
 
-    override fun observeItemsForDateRange(startEpochDay: Long, endEpochDay: Long): Flow<List<AgendaItem>> {
-        return agendaItemDao.observeItemsForDateRange(startEpochDay, endEpochDay).map { entities ->
+    override fun observeItemsUpToEndDate(endEpochDay: Long): Flow<List<AgendaItem>> {
+        return agendaItemDao.observeItemsUpToEndDate(endEpochDay).map { entities ->
             entities.map { it.toAgendaItem() }
         }
     }

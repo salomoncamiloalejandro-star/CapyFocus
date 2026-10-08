@@ -1,6 +1,8 @@
 package com.muzu.capyfocus.ui.screens.agenda.components
 
+import android.os.Build
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,15 +14,26 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -31,7 +44,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.muzu.capyfocus.core.notification.NotificationScheduler
 import com.muzu.capyfocus.domain.models.AgendaCategory
 import com.muzu.capyfocus.domain.models.AgendaItem
 import com.muzu.capyfocus.domain.models.AgendaItemType
@@ -50,6 +65,9 @@ fun AddEditAgendaItemDialog(
     errorMessage: String?,
     onEvent: (AgendaEvent) -> Unit,
 ) {
+    val context = LocalContext.current
+    val notificationScheduler = remember { NotificationScheduler(context) }
+
     var title by remember { mutableStateOf(editingItem?.title ?: "") }
     var description by remember { mutableStateOf(editingItem?.description ?: "") }
     var type by remember { mutableStateOf(editingItem?.type ?: AgendaItemType.TASK) }
@@ -60,7 +78,41 @@ fun AddEditAgendaItemDialog(
     var recurrence by remember { mutableStateOf(editingItem?.recurrenceType ?: RecurrenceType.NONE) }
     var notificationOffset by remember { mutableStateOf(editingItem?.notificationOffset ?: NotificationOffset.FIFTEEN_MINUTES_BEFORE) }
 
+    var showStartTimePicker by remember { mutableStateOf(false) }
+    var showEndTimePicker by remember { mutableStateOf(false) }
+
     val scrollState = rememberScrollState()
+
+    if (showStartTimePicker) {
+        TimePickerSelectionDialog(
+            title = "Seleccionar Hora de Inicio",
+            initialHour = startMinute / 60,
+            initialMinute = startMinute % 60,
+            onDismiss = { showStartTimePicker = false },
+            onTimeSelected = { hour, minute ->
+                val newStart = hour * 60 + minute
+                startMinute = newStart
+                if (endMinute <= startMinute) {
+                    endMinute = (startMinute + 60).coerceAtMost(1440)
+                }
+                showStartTimePicker = false
+            },
+        )
+    }
+
+    if (showEndTimePicker) {
+        TimePickerSelectionDialog(
+            title = "Seleccionar Hora de Fin",
+            initialHour = endMinute / 60,
+            initialMinute = endMinute % 60,
+            onDismiss = { showEndTimePicker = false },
+            onTimeSelected = { hour, minute ->
+                val newEnd = hour * 60 + minute
+                endMinute = newEnd.coerceAtLeast(startMinute + 15)
+                showEndTimePicker = false
+            },
+        )
+    }
 
     AlertDialog(
         onDismissRequest = { onEvent(AgendaEvent.DismissDialogs) },
@@ -176,27 +228,96 @@ fun AddEditAgendaItemDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text("Horario", style = MaterialTheme.typography.labelMedium)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    val startStr = String.format("%02d:%02d", startMinute / 60, startMinute % 60)
-                    val endStr = String.format("%02d:%02d", endMinute / 60, endMinute % 60)
+                val startStr = String.format("%02d:%02d", startMinute / 60, startMinute % 60)
+                val endStr = String.format("%02d:%02d", endMinute / 60, endMinute % 60)
 
-                    Column {
-                        Text("Inicio: $startStr", style = MaterialTheme.typography.bodyMedium)
-                        Row {
-                            TextButton(onClick = { startMinute = (startMinute - 15).coerceAtLeast(0) }) { Text("-15m") }
-                            TextButton(onClick = { startMinute = (startMinute + 15).coerceAtMost(1425) }) { Text("+15m") }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    OutlinedCard(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { showStartTimePicker = true },
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            horizontalAlignment = Alignment.Start,
+                        ) {
+                            Text("Inicio", style = MaterialTheme.typography.labelSmall)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(top = 4.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Schedule,
+                                    contentDescription = "Hora inicio",
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = startStr,
+                                    style = MaterialTheme.typography.titleMedium,
+                                )
+                            }
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                            ) {
+                                TextButton(
+                                    onClick = { startMinute = (startMinute - 15).coerceAtLeast(0) },
+                                    modifier = Modifier.height(32.dp),
+                                ) { Text("-15m", style = MaterialTheme.typography.labelSmall) }
+                                TextButton(
+                                    onClick = { startMinute = (startMinute + 15).coerceAtMost(1425) },
+                                    modifier = Modifier.height(32.dp),
+                                ) { Text("+15m", style = MaterialTheme.typography.labelSmall) }
+                            }
                         }
                     }
 
-                    Column {
-                        Text("Fin: $endStr", style = MaterialTheme.typography.bodyMedium)
-                        Row {
-                            TextButton(onClick = { endMinute = (endMinute - 15).coerceAtLeast(startMinute + 15) }) { Text("-15m") }
-                            TextButton(onClick = { endMinute = (endMinute + 15).coerceAtMost(1440) }) { Text("+15m") }
+                    OutlinedCard(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { showEndTimePicker = true },
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            horizontalAlignment = Alignment.Start,
+                        ) {
+                            Text("Fin", style = MaterialTheme.typography.labelSmall)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(top = 4.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Schedule,
+                                    contentDescription = "Hora fin",
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = endStr,
+                                    style = MaterialTheme.typography.titleMedium,
+                                )
+                            }
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                            ) {
+                                TextButton(
+                                    onClick = { endMinute = (endMinute - 15).coerceAtLeast(startMinute + 15) },
+                                    modifier = Modifier.height(32.dp),
+                                ) { Text("-15m", style = MaterialTheme.typography.labelSmall) }
+                                TextButton(
+                                    onClick = { endMinute = (endMinute + 15).coerceAtMost(1440) },
+                                    modifier = Modifier.height(32.dp),
+                                ) { Text("+15m", style = MaterialTheme.typography.labelSmall) }
+                            }
                         }
                     }
                 }
@@ -232,6 +353,30 @@ fun AddEditAgendaItemDialog(
                         )
                     }
                 }
+
+                if (notificationOffset != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !notificationScheduler.canScheduleExactAlarms()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = "Permiso de alarmas exactas no otorgado. La notificación podría sufrir retrasos.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            TextButton(
+                                onClick = { notificationScheduler.requestExactAlarmPermission(context) },
+                            ) {
+                                Text("Permitir alarmas exactas")
+                            }
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
@@ -258,6 +403,49 @@ fun AddEditAgendaItemDialog(
         },
         dismissButton = {
             TextButton(onClick = { onEvent(AgendaEvent.DismissDialogs) }) {
+                Text("Cancelar")
+            }
+        },
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimePickerSelectionDialog(
+    title: String,
+    initialHour: Int,
+    initialMinute: Int,
+    onDismiss: () -> Unit,
+    onTimeSelected: (hour: Int, minute: Int) -> Unit,
+) {
+    val timePickerState = rememberTimePickerState(
+        initialHour = initialHour,
+        initialMinute = initialMinute,
+        is24Hour = true,
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title, style = MaterialTheme.typography.titleMedium) },
+        text = {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                TimePicker(state = timePickerState)
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onTimeSelected(timePickerState.hour, timePickerState.minute)
+                },
+            ) {
+                Text("Aceptar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
                 Text("Cancelar")
             }
         },

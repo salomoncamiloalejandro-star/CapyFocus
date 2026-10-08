@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface AgendaItemDao {
 
-    @Query("SELECT * FROM agenda_items WHERE dateEpochDay >= :startEpochDay AND dateEpochDay <= :endEpochDay ORDER BY startMinuteOfDay ASC")
-    fun observeItemsForDateRange(startEpochDay: Long, endEpochDay: Long): Flow<List<AgendaItemEntity>>
+    @Query("SELECT * FROM agenda_items WHERE dateEpochDay <= :endEpochDay ORDER BY startMinuteOfDay ASC")
+    fun observeItemsUpToEndDate(endEpochDay: Long): Flow<List<AgendaItemEntity>>
 
     @Query("SELECT * FROM agenda_items WHERE id = :id")
     suspend fun getById(id: String): AgendaItemEntity?
