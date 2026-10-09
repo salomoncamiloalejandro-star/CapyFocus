@@ -34,6 +34,7 @@ import com.muzu.capyfocus.ui.screens.agenda.components.AgendaItemDetailDialog
 import com.muzu.capyfocus.ui.screens.agenda.components.DayCalendarView
 import com.muzu.capyfocus.ui.screens.agenda.components.MonthCalendarView
 import com.muzu.capyfocus.ui.screens.agenda.components.WeekCalendarView
+import java.time.DayOfWeek
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -66,6 +67,7 @@ fun AgendaScreen(
                 when (uiState.viewMode) {
                     AgendaViewMode.DAY -> {
                         DayCalendarView(
+                            selectedDate = uiState.selectedDate,
                             items = uiState.items,
                             onEvent = viewModel::onEvent,
                             modifier = Modifier.fillMaxSize(),
@@ -115,8 +117,29 @@ private fun AgendaHeader(
     uiState: AgendaUiState,
     onEvent: (AgendaEvent) -> Unit,
 ) {
-    val formatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.forLanguageTag("es"))
-    val monthYearStr = uiState.selectedDate.format(formatter).replaceFirstChar { it.uppercase() }
+    val esLocale = Locale("es")
+    val dateText = when (uiState.viewMode) {
+        AgendaViewMode.DAY -> {
+            val formatter = DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM yyyy", esLocale)
+            uiState.selectedDate.format(formatter).replaceFirstChar { it.uppercase() }
+        }
+        AgendaViewMode.WEEK -> {
+            val startOfWeek = uiState.selectedDate.with(DayOfWeek.MONDAY)
+            val endOfWeek = uiState.selectedDate.with(DayOfWeek.SUNDAY)
+            if (startOfWeek.month == endOfWeek.month) {
+                val monthStr = startOfWeek.format(DateTimeFormatter.ofPattern("MMMM yyyy", esLocale)).replaceFirstChar { it.uppercase() }
+                "${startOfWeek.dayOfMonth} - ${endOfWeek.dayOfMonth} de $monthStr"
+            } else {
+                val startStr = startOfWeek.format(DateTimeFormatter.ofPattern("d 'de' MMM", esLocale))
+                val endStr = endOfWeek.format(DateTimeFormatter.ofPattern("d 'de' MMM yyyy", esLocale))
+                "$startStr - $endStr"
+            }
+        }
+        AgendaViewMode.MONTH -> {
+            val formatter = DateTimeFormatter.ofPattern("MMMM yyyy", esLocale)
+            uiState.selectedDate.format(formatter).replaceFirstChar { it.uppercase() }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -162,7 +185,7 @@ private fun AgendaHeader(
                 )
             }
             Text(
-                text = monthYearStr,
+                text = dateText,
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
             )
             IconButton(onClick = { onEvent(AgendaEvent.NavigateDate(1)) }) {

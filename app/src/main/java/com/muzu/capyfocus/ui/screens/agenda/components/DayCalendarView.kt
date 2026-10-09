@@ -3,6 +3,7 @@ package com.muzu.capyfocus.ui.screens.agenda.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,7 +21,10 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -38,59 +42,109 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.muzu.capyfocus.domain.models.AgendaItem
 import com.muzu.capyfocus.ui.screens.agenda.AgendaEvent
+import java.time.LocalDate
+import java.time.format.TextStyle
+import java.util.Locale
 import kotlin.math.roundToInt
 
 private val HourRowHeight = 60.dp
 
 @Composable
 fun DayCalendarView(
+    selectedDate: LocalDate,
     items: List<AgendaItem>,
     onEvent: (AgendaEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
+    val isToday = selectedDate == LocalDate.now()
+    val esLocale = Locale.forLanguageTag("es")
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState),
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            for (hour in 0..23) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(HourRowHeight),
-                    verticalAlignment = Alignment.Top,
-                ) {
+    Column(modifier = modifier.fillMaxSize()) {
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val dayName = selectedDate.dayOfWeek.getDisplayName(TextStyle.FULL, esLocale)
+                        .replaceFirstChar { it.uppercase() }
+                    val dayNum = selectedDate.dayOfMonth
+                    val monthName = selectedDate.month.getDisplayName(TextStyle.FULL, esLocale)
+
                     Text(
-                        text = String.format("%02d:00", hour),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .width(50.dp)
-                            .padding(start = 8.dp, top = 2.dp),
+                        text = "$dayName, $dayNum de $monthName",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
-                    HorizontalDivider(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                    )
+
+                    if (isToday) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        SuggestionChip(
+                            onClick = { },
+                            label = { Text("HOY", style = MaterialTheme.typography.labelSmall) },
+                        )
+                    }
+                }
+
+                if (!isToday) {
+                    TextButton(onClick = { onEvent(AgendaEvent.SelectDate(LocalDate.now())) }) {
+                        Text("Ir a hoy")
+                    }
                 }
             }
         }
 
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = 54.dp, end = 8.dp),
+                .verticalScroll(scrollState),
         ) {
-            items.forEach { item ->
-                DayAgendaItemCard(
-                    item = item,
-                    onEvent = onEvent,
-                )
+            Column(modifier = Modifier.fillMaxWidth()) {
+                for (hour in 0..23) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(HourRowHeight),
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        Text(
+                            text = String.format(Locale.getDefault(), "%02d:00", hour),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .width(50.dp)
+                                .padding(start = 8.dp, top = 2.dp),
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                        )
+                    }
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(start = 54.dp, end = 8.dp),
+            ) {
+                items.forEach { item ->
+                    DayAgendaItemCard(
+                        item = item,
+                        onEvent = onEvent,
+                    )
+                }
             }
         }
     }
@@ -162,8 +216,8 @@ private fun DayAgendaItemCard(
                     modifier = Modifier.weight(1f),
                 )
             }
-            val startStr = String.format("%02d:%02d", item.startMinuteOfDay / 60, item.startMinuteOfDay % 60)
-            val endStr = String.format("%02d:%02d", item.endMinuteOfDay / 60, item.endMinuteOfDay % 60)
+            val startStr = String.format(Locale.getDefault(), "%02d:%02d", item.startMinuteOfDay / 60, item.startMinuteOfDay % 60)
+            val endStr = String.format(Locale.getDefault(), "%02d:%02d", item.endMinuteOfDay / 60, item.endMinuteOfDay % 60)
             Text(
                 text = "$startStr - $endStr",
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
