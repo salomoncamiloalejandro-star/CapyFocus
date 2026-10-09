@@ -117,7 +117,7 @@ private fun AgendaHeader(
     uiState: AgendaUiState,
     onEvent: (AgendaEvent) -> Unit,
 ) {
-    val esLocale = Locale("es")
+    val esLocale = Locale.forLanguageTag("es")
     val dateText = when (uiState.viewMode) {
         AgendaViewMode.DAY -> {
             val formatter = DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM yyyy", esLocale)
